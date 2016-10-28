@@ -1,5 +1,6 @@
-# parallel_computing_1st  
-parallel computing assignments  
+# Trabalho 1, Tópicos Especiais em Arquitetura de Computadores I
+ 
+parallel computing first assignment 
 
 
 
