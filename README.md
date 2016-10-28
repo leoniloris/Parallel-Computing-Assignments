@@ -16,9 +16,9 @@ parallel computing first assignment
     (caso não sejam fornecidos os argumentos, argumentos padrão serão selecionados nome_arquivo_saida=results.dat  TILE_WIDTH=16, N_LOOP=2)  
     
     
-1 nome_arquivo_saida =\> arquivo onde serão guardados os tempos de execução da computação.   
-2 TILE_WIDTH=\> tamanho do ladrilho utilizado  
-3 N_LOOP=\> quantidade de vezes que a multiplicação vai ser efetuada  
+ 1- nome_arquivo_saida =\> arquivo onde serão guardados os tempos de execução da computação.   
+ 2- TILE_WIDTH=\> tamanho do ladrilho utilizado  
+ 3- N_LOOP=\> quantidade de vezes que a multiplicação vai ser efetuada  
      
 o programa faz multiplicações com diversos tamanhos de matrizes, começando em matrizes 8x8, dobrando de tamanho até 1024x1024  
 ao ser executado, ele mostra os passos (tamanhos das matrizes [8 out of 1024, 16 out of 1024 ...]) e mostra o erro acumulado entre a multiplicação sequencial ladrilhada e esta mesma paralela, também ladrilhada.
