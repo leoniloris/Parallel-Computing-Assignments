@@ -1,7 +1,7 @@
 CC=nvcc
 CFLAGS= -Xcompiler -fopenmp #-O3 -arch sm_30
 DEB= -G -g 
-DPREC= -arch=sm_32
+DPREC= -arch=sm_20
 LIB= -lgomp -lcudart -lcuda 
 SOURCES= $(wildcard *.cu)
 EXECNAME= $(SOURCES:.cu=.out)
