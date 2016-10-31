@@ -22,7 +22,7 @@ __global__ void matrixMultiplyPar(double * A, double * B, double * C,
   		       int numARows, int numAColumns,
 			       int numBRows, int numBColumns,
 			       int numCRows, int numCColumns,int TILE_WIDTH) {
-
+	 //for(int a=0;a<numBColumns*numBColumns;a++) C[a]=0.0;
     extern __shared__ double ds_MN[];
     int bx = blockIdx.x, by = blockIdx.y,
        tx = threadIdx.x, ty = threadIdx.y,
@@ -45,9 +45,7 @@ __global__ void matrixMultiplyPar(double * A, double * B, double * C,
 }
 // blocked sequencial multiplication aqui!!!!! (tileado)
 __host__ void matrixMultiply(double * A, double * B, double * C,int numARows, int numAColumns,int numBRows, int numBColumns){
-	
 	for(int a=0;a<numBColumns*numBColumns;a++) C[a]=0.0;
-	
 	for ( int i=0; i<numAColumns; i+=TILE_WIDTH )
         for (int  j=0; j<numAColumns; j+=TILE_WIDTH )
             for (int k=0; k<numAColumns; k+=TILE_WIDTH )
@@ -55,36 +53,41 @@ __host__ void matrixMultiply(double * A, double * B, double * C,int numARows, in
                     for (int x=j; x<min(j+TILE_WIDTH,numAColumns); x++ )
                         for (int z=k; z<min(k+TILE_WIDTH,numAColumns); z++ )
                             C[y*numAColumns+x] += A[y*numAColumns+z]*B[z*numAColumns+x];
+                            
+                            
+                            
 }
 void Rand_matrix(double * M, int rows,int cols){	
-	srand(time(NULL));int i;
-//#pragma omp parallel for private(i) shared(M,rows,cols)
-	for(i=0;i<rows*cols;i++)
+	srand(time(NULL));
+#pragma omp parallel for 
+	for(int i=0;i<rows*cols;i++)
 		M[i]=((double)(rand()%101)/100.00) - 0.5;
 }
 int main(int argc, char ** argv) {
 	FILE *fp; // write results in a file
 	if(argc<4){ // caso nao venha com argumentos
-		printf(" Argumentos padrao selecionados\n resultados em 'results.dat'\n TILE_WIDTH=16\n cada multiplicaçao é executada apenas 1 vez \n"); 
-		fp = fopen("esults.dat", "w+");
+		printf(" Argumentos padrao selecionados\n resultados em 'results.dat'\n TILE_WIDTH=16\n cada multiplicaçao é executada apenas 2 vezes \n"); 
+		fp = fopen("results.dat", "w+");
 		TILE_WIDTH=16;
-		N_LOOP=1;
+		N_LOOP=2;
 	}
 	else {
 	fp = fopen(argv[1], "w+");
 	TILE_WIDTH=atoi(argv[2]);
-	N_LOOP=atoi(argv[3]);printf("%d\n\n\n\n",N_LOOP);
+	N_LOOP=atoi(argv[3]);
 	}
 	cudaEvent_t start, stop;// so I can save performance information
-	float ms=0;
+	
 	double *hostA, *hostB, *hostC,*deviceA,*deviceB,*deviceC,*hostC_seq;
 
 
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 	int numARows, numAColumns, numBRows, numBColumns, numCRows, numCColumns;	
-
+	
+	
 	for (MATRIX_SIZE=8;MATRIX_SIZE<=MAX_MATRIX_SIZE ;MATRIX_SIZE*=2){
+		float ms=0;
 		numARows=numAColumns=numBRows=numBColumns=numCRows=numCColumns=MATRIX_SIZE;
 		hostB=(double *)malloc(sizeof(double)*numBRows*numBColumns);
 		hostA=(double *)malloc(sizeof(double)*numARows*numAColumns);
@@ -103,20 +106,21 @@ int main(int argc, char ** argv) {
 		
 		// esta parte eu s`o vou executar qdo eu encontrar os valores `otimos
 		cudaEventRecord(start);
-		#pragma omp parallel for firstprivate (hostA,hostB,hostC_seq) 
+		#pragma omp parallel for firstprivate (hostA,hostB,hostC_seq)
 		for(int vez=1;vez<=N_LOOP;vez++){
+		#pragma omp critical
 			matrixMultiply(hostA,hostB,hostC_seq,numARows, numAColumns, numBRows, numBColumns);
-			
 //for(int az=0;az<numCRows*numCRows;az++) printf("%f\n",hostC_seq[az]);
 			}
 		#pragma omp barrier	
 		cudaEventRecord(stop);cudaEventSynchronize(stop);cudaEventElapsedTime(&ms, start, stop);
-		fprintf(fp,"%f ",ms);
+		fprintf(fp,"%f ",ms/1000.0);
 		
 		/* @@@@@@@@@@@@@@@@@  parallel multiplication @@@@@@@@@@@@@@@@@ */
 		cudaEventRecord(start);
-		#pragma omp parallel for //firstprivate ( deviceA,deviceB,deviceC)
+		#pragma omp parallel for firstprivate ( deviceA,deviceB,deviceC)
 		for(int vez=1;vez<=N_LOOP;vez++){
+		#pragma omp critical
 			matrixMultiplyPar<<<dimGrid, dimBlock,2*TILE_WIDTH*TILE_WIDTH*sizeof(double)>>>( deviceA,deviceB,deviceC,numARows,numAColumns,numBRows,numBColumns,numCRows,numCColumns,TILE_WIDTH);
 			cudaThreadSynchronize();
 		}
@@ -124,9 +128,10 @@ int main(int argc, char ** argv) {
 		cudaEventRecord(stop);cudaEventSynchronize(stop);cudaEventElapsedTime(&ms, start, stop);
 		cudaMemcpy(hostC, deviceC, sizeof(double) * numCRows * numCColumns, cudaMemcpyDeviceToHost);
 		//for(int az=0;az<numCRows*numCRows;az++) printf("%f\n",hostC[az]);
-		fprintf(fp,"%f\n",ms/*,compare(hostC_seq,hostC,MATRIX_SIZE)*/);
+		fprintf(fp,"%f\n",ms/1000.0);
 		
-																											printf("%f\n",compare(hostC_seq,hostC,MATRIX_SIZE));
+		printf("erro acumulado %f\n",compare(hostC_seq,hostC,MATRIX_SIZE));
+		
 //for(int az=0;az<numCRows*numCRows;az++) printf("%f %f\n",hostC_seq[az],hostC[az]);
 		free(hostA);
 		free(hostB);

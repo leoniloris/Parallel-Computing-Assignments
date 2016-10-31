@@ -1,12 +1,12 @@
 CC=nvcc
 CFLAGS= -Xcompiler -fopenmp #-O3 -arch sm_30
 DEB= -G -g 
-DPREC= -arch sm_13 
+DPREC= -arch=sm_32
 LIB= -lgomp -lcudart -lcuda 
 SOURCES= $(wildcard *.cu)
 EXECNAME= $(SOURCES:.cu=.out)
 alld:
-	$(CC) -o $(EXECNAME) $(SOURCES) $(LIB) $(CFLAGS) -arch sm_30
+	$(CC) -o $(EXECNAME) $(SOURCES) $(DPREC) $(LIB) $(CFLAGS)
 dbg: 
 	$(CC) -o $(EXECNAME) $(SOURCES) $(LIB) $(CFLAGS) $(DEB)
 all: 
