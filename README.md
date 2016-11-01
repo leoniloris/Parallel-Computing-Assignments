@@ -30,5 +30,5 @@ e outro para a quantidade de vezes que a multiplicação serà executada (os 2 a
   
 os arquivos de saìda tem o padrão: (float ou double)_(TILE_WIDTH)-(N_LOOP)  
   
-os gràficos foram gerados com o matlab.
+os gràficos foram gerados com o matlab, e os scripts e arquivos estão na pasta 'general'.
 
